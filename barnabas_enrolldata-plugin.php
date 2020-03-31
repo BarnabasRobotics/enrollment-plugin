@@ -40,6 +40,7 @@ class bre_widget extends WP_Widget {
         $title = apply_filters( 'widget_title', $instance['title'] );
         $imgid =(isset( $instance[ 'imgid' ] )) ? $instance[ 'imgid' ] : "";
         $img    = wp_get_attachment_image_src($imgid, 'thumbnail');
+		$course_name =(isset( $instance[ 'name' ] )) ? $instance[ 'name' ] : "This class";
 
         $response = wp_remote_get( 'https://enroll.barnabasrobotics.com/courses/'.$title.'/info.json' );
         if ( is_wp_error( $response ) ) {
@@ -160,7 +161,7 @@ HTML;
 			}
 			
         } else {
-            $output .= '<p class="nolongeravailable">This class is no longer available</p>';
+            $output .= '<p class="nolongeravailable">'. $course_name . ' is no longer available</p>';
         }
 		
 		if( strpos($args['before_widget'], 'style') === false ) {
@@ -191,6 +192,13 @@ HTML;
         else {
             $title = __( '000', 'bre_widget_domain' );
         }
+		
+		if (isset( $instance[ 'name' ] )) {
+            $name = $instance[ 'name' ];
+        }
+        else {
+            $name = __( 'No name set', 'bre_widget_domain' );
+        }
 
         if (isset( $instance[ 'imgid' ] )) {
             $imgid = $instance[ 'imgid' ];
@@ -212,7 +220,7 @@ HTML;
         ?>
         <p>
         <label for="<?php echo $this->get_field_id( 'title' ); ?>"><?php _e( 'Course ID:' );?></label> 
-        <select class="widefat" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>">
+        <select class="widefat set_course" id="<?php echo $this->get_field_id( 'title' ); ?>" name="<?php echo $this->get_field_name( 'title' ); ?>">
         <?php foreach ($data as $city) { ?>
             <optgroup label="<?php echo $city[0]; ?>">
         <?php foreach ($city[1] as $course){
@@ -227,6 +235,10 @@ HTML;
         <?php } ?>
         </select>
         </p>
+			<p>
+		<label for="<?php echo esc_attr( $this->get_field_id( 'name' ) ); ?>"><?php _e( 'Name:', 'bre_widget_domain' ); ?></label>
+		<input disabled class="widefat course_text" id="<?php echo esc_attr( $this->get_field_id( 'name' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'name' ) ); ?>" type="text" value="<?php echo esc_attr( $name ); ?>" />
+	</p>
  
         <p>
             <input class="widefat" hidden id="<?php echo $this->get_field_id( 'imgid' ); ?>" name="<?php echo $this->get_field_name( 'imgid' ); ?>" type="number" value="<?php echo esc_attr( $imgid ); ?>" />
@@ -237,7 +249,18 @@ HTML;
         (function($){
 
         "use strict";
-
+			
+		if ($('.set_course').value != '000'){
+			$('.set_course').on('change', function(e) {
+				e.preventDefault();
+				var str =  $('.set_course option:selected').text();
+				var start_pos =str.indexOf('-') + 2;
+				var end_pos = str.indexOf('|') - 1;
+				var name = str.substring(start_pos,end_pos)
+				$('.course_text').val(name);
+				return false;
+			})
+		}
         if ($('.set_custom_images').length > 0) {
             if ( typeof wp !== 'undefined' && wp.media && wp.media.editor) {
                 $('.set_custom_images').on('click', function(e) {
@@ -265,6 +288,7 @@ HTML;
         $instance = array();
         $instance['title'] = ( ! empty( $new_instance['title'] ) ) ? strip_tags( $new_instance['title'] ) : '';
         $instance['imgid'] = ( ! empty( $new_instance['imgid'] ) ) ? strip_tags( $new_instance['imgid'] ) : '';
+		$instance['name'] = ( ! empty( $new_instance['name'] ) ) ? strip_tags( $new_instance['name'] ) : '';
         return $instance;
     } // end update
 }//end class
